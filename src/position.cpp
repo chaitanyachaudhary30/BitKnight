@@ -67,6 +67,7 @@ void Position::updateOccupancies() {
 // The below funtion will help us in loading FEN positions etc, and will act as helper function in movePiece(). We don't also remove the prev position, because removePiece does that.
 // To remove the old piece as well, we would need one more parameter, which is square_from.
 // movePiece we will add in later versions,this is just the 1st version.
+
 void Position::setPiece(Piece piece, Square square) {
     if (piece == Piece::None || square == Square::None) { // if piece or square not selected, just return.
         return;
@@ -102,12 +103,12 @@ bool Position::isOccupiedByColor(Square square, Color color) const {
     Bitboard squareMask = squareBitboard(square);
 
     if (color == Color::White) {
-        if ((whitePieces & squareMask) != 0Ull) return true;
+        if ((whitePieces & squareMask) != 0ULL) return true;
         return false;
     }
 
     if (color == Color::Black) {
-        if ((blackPieces & squareMask) == 0ULL) return true;
+        if ((blackPieces & squareMask) != 0ULL) return true;
         return false;
     }
     return true; // All cases already covered, this return true is just for maintaining the return type as bool.
