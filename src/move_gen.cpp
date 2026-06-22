@@ -117,6 +117,67 @@ void generatePawnMoves(const Position& pos, MoveList& moves, Square source, Piec
     }
 }        
 
+
+void generateKnightMoves(const Position& pos, MoveList& moves, Square source, Piece knight) {
+    int source_idx = static_cast<int>(source);
+
+    int file = source_idx % 8;
+    int rank = source_idx / 8;
+
+    // All 8 possible knight jumps as {file change, rank change}.
+    int knight_moves[8][2] = {
+        { 1,  2},
+        {-1,  2},
+        { 1, -2},
+        {-1, -2},
+        { 2,  1},
+        {-2,  1},
+        { 2, -1},
+        {-2, -1}
+    };
+
+    for (int i = 0; i < 8; i++) {
+        int target_file = file + knight_moves[i][0];
+        int target_rank = rank + knight_moves[i][1];
+
+        // If target square is outside the board, skip it.
+        if (target_file < 0 || target_file > 7 || target_rank < 0 || target_rank > 7) {
+            continue;
+        }
+
+        int target_idx = target_rank * 8 + target_file;
+        Square target_square = static_cast<Square>(target_idx);
+
+        Piece target_piece = pos.pieceAt(target_square);
+
+        // Empty square: quiet knight move.
+        if (target_piece == Piece::None) {
+            moves.push_back(Move(
+                source,
+                target_square,
+                knight,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::Quiet
+            ));
+        }
+
+        // Opponent piece: capture move.
+        else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
+            moves.push_back(Move(
+                source,
+                target_square,
+                knight,
+                target_piece,
+                PieceType::None,
+                MoveFlag::Capture
+            ));
+        }
+
+        // Otherwise it will be same color piece, so no move.
+    }
+}
+
     void generatePseudoLegalMoves (const Position &pos, MoveList& moves){
 
         moves.clear();
@@ -131,6 +192,9 @@ void generatePawnMoves(const Position& pos, MoveList& moves, Square source, Piec
             
             if (piece_type == PieceType :: Pawn) {
                 generatePawnMoves (pos, moves, square, piece);
+            }
+            else if (piece_type == PieceType :: Knight){
+                generateKnightMoves (pos, moves, square, piece);
             }
 
         }
