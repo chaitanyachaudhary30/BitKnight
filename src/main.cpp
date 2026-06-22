@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "fen.h"
-#include "move.h"
+#include "move_gen.h"
 
 int main() {
     using namespace BitKnight;
@@ -9,50 +9,26 @@ int main() {
     Position pos;
 
     if (!loadFEN(pos, STARTING_FEN)) {
-        std::cout << "Failed to load FEN.\n";
+        std::cout << "Failed to load starting FEN.\n";
         return 1;
     }
 
-    std::cout << "Starting position loaded successfully:\n";
+    std::cout << "Starting position:\n";
     pos.print();
 
-    std::cout << std::boolalpha;
+    MoveList moves;
+    generatePseudoLegalMoves(pos, moves);
 
-    // A normal pawn move from e2 to e4.
-    Move quietMove(
-        Square::E2,
-        Square::E4,
-        Piece::WhitePawn
-    );
+    std::cout << "Generated pseudo-legal moves: "
+              << moves.size() << "\n";
 
-    // A knight capture example: white knight from f3 captures black pawn on e5.
-    Move captureMove(
-        Square::F3, //  source
-        Square::E5, // destination
-        Piece::WhiteKnight, // piece moving
-        Piece::BlackPawn, // capture
-        PieceType::None,  // promotion piece
-        MoveFlag::Capture // what type of move
-    );
+    std::cout << "Expected pawn-only move count from starting position: 16\n";
 
-    // A promotion example: white pawn promotes on e8 to a queen.
-    Move promotionMove(
-        Square::E7,
-        Square::E8,
-        Piece::WhitePawn,
-        Piece::None,
-        PieceType::Queen,
-        MoveFlag::Promotion
-    );
-
-    std::cout << "quietMove is capture? "
-              << isCapture(quietMove) << "\n";
-
-    std::cout << "captureMove is capture? "
-              << isCapture(captureMove) << "\n";
-
-    std::cout << "promotionMove is promotion? "
-              << isPromotion(promotionMove) << "\n";
+    if (moves.size() == 16) {
+        std::cout << "Pawn move generation test passed.\n";
+    } else {
+        std::cout << "Pawn move generation test failed.\n";
+    }
 
     return 0;
 }

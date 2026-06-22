@@ -11,7 +11,8 @@ constexpr int NO_SQUARE = 64;
 
 enum class Color : int {
     White = 0,
-    Black = 1
+    Black = 1,
+    None = 2
 };
 // Using enum instead of map everywhere because enum takes constant time, whereas map takes log(n) lookup time.
 // Also, map is only one way access, being key -> value. But with enum, if we have the piece, we can get the corresponding integer with toInt, and the vice-versa with static_cast<Square> (28).
@@ -69,11 +70,20 @@ inline constexpr int toInt(Color color) {
 }
 
 inline constexpr Color opposite(Color color) { // Whenever we will write the function for toggling the player to move, we will call this function.
-    return color == Color::White ? Color::Black : Color::White;
+    if (color == Color::White) return Color::Black;
+    if (color == Color::Black) return Color::White; 
+    return Color::None;
 }
 
 inline constexpr Bitboard squareBitboard(Square square) { // generates the bitboard (unsigned int) with the input square bit as being set to 1.
     return square == Square::None ? 0ULL : (1ULL << toInt(square));
+}
+
+inline constexpr Color pieceColor (Piece piece) {
+    if (piece == Piece :: None) return Color :: None;
+    int enum_value = static_cast <int> (piece);
+    if (enum_value >= 0 && enum_value <= 5) return Color :: White;
+    return Color :: Black;
 }
 
 }
