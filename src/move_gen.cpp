@@ -115,6 +115,58 @@ void generatePawnMoves(const Position& pos, MoveList& moves, Square source, Piec
             }
         }
     }
+
+// Check for EnPassant now
+
+    // The pawn moves diagonally to it destination pos.enPassantSquare, but the captured pawn is behind that square.
+    // It also checks from the FEN notation whether its a - or whether Enpassant is really allowed.
+
+    if (pos.enPassantSquare != Square::None) {
+        int EnPassant_idx = static_cast<int>(pos.enPassantSquare);
+        int diff = EnPassant_idx - source_idx;
+
+        bool can_en_passant = false;
+
+        if (color == Color::White) {
+            // White pawn must be on rank 5, zero-based rank = 4.
+            // It can capture diagonally to +7 or +9.
+            can_en_passant =
+                rank == 4 &&
+                ((file > 0 && diff == 7) ||
+                 (file < 7 && diff == 9));
+        } else if (color == Color::Black) {
+            // Black pawn must be on rank 4, zero-based rank = 3.
+            // It can capture diagonally to -9 or -7.
+            can_en_passant =
+                rank == 3 &&
+                ((file > 0 && diff == -9) ||
+                 (file < 7 && diff == -7));
+        }
+
+        if (can_en_passant) {
+            Piece captured_pawn =
+                (color == Color::White) ? Piece::BlackPawn : Piece::WhitePawn;
+
+            int captured_idx =
+                (color == Color::White) ? EnPassant_idx - 8 : EnPassant_idx + 8;
+
+            if (captured_idx >= 0 && captured_idx < 64) {
+                Square captured_square = static_cast<Square>(captured_idx);
+
+                // Extra safety check: the pawn to be captured should actually exist.
+                if (pos.pieceAt(captured_square) == captured_pawn) {
+                    moves.push_back(Move(
+                        source,
+                        pos.enPassantSquare,
+                        pawn,
+                        captured_pawn,
+                        PieceType::None,
+                        MoveFlag::EnPassant
+                    ));
+                }
+            }
+        }
+    }
 }        
 
 // KNIGHT
@@ -429,7 +481,7 @@ void generateKingMoves(const Position& pos, MoveList& moves, Square source, Piec
             ));
         }
 
-        // Enemy piece: king can capture it in pseudo-legal generation.
+        // Enemy piece: king can capture it.
         else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
             moves.push_back(Move(
                 source,
@@ -441,7 +493,85 @@ void generateKingMoves(const Position& pos, MoveList& moves, Square source, Piec
             ));
         }
 
-        // Own piece: blocked, no move.
+    // Own piece: blocked, no move.
+    }
+
+    // Now we check for CASTLING.
+
+    // Castling rights encoding:
+    // 1 = White kingside
+    // 2 = White queenside
+    // 4 = Black kingside
+    // 8 = Black queenside
+
+    if (pos.sideToMove == Color::White && source == Square::E1) {
+        // White kingside castling: e1 -> g1
+        if ((pos.castlingRights & 1) &&
+            pos.pieceAt(Square::H1) == Piece::WhiteRook &&
+            !pos.isOccupied(Square::F1) &&
+            !pos.isOccupied(Square::G1)) {
+
+            moves.push_back(Move(
+                source,
+                Square::G1,
+                king,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::KingCastle
+            ));
+        }
+
+        // White queenside castling: e1 -> c1
+        if ((pos.castlingRights & 2) &&
+            pos.pieceAt(Square::A1) == Piece::WhiteRook &&
+            !pos.isOccupied(Square::D1) &&
+            !pos.isOccupied(Square::C1) &&
+            !pos.isOccupied(Square::B1)) {
+
+            moves.push_back(Move(
+                source,
+                Square::C1,
+                king,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::QueenCastle
+            ));
+        }
+    }
+
+    if (pos.sideToMove == Color::Black && source == Square::E8) {
+        // Black kingside castling: e8 -> g8
+        if ((pos.castlingRights & 4) &&
+            pos.pieceAt(Square::H8) == Piece::BlackRook &&
+            !pos.isOccupied(Square::F8) &&
+            !pos.isOccupied(Square::G8)) {
+
+            moves.push_back(Move(
+                source,
+                Square::G8,
+                king,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::KingCastle
+            ));
+        }
+
+        // Black queenside castling: e8 -> c8
+        if ((pos.castlingRights & 8) &&
+            pos.pieceAt(Square::A8) == Piece::BlackRook &&
+            !pos.isOccupied(Square::D8) &&
+            !pos.isOccupied(Square::C8) &&
+            !pos.isOccupied(Square::B8)) {
+
+            moves.push_back(Move(
+                source,
+                Square::C8,
+                king,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::QueenCastle
+            ));
+        }
     }
 }
 

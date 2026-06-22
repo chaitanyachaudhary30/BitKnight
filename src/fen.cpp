@@ -159,6 +159,7 @@ bool loadFEN(Position& pos, const std::string& fen) { // Pass pos by reference.
         if (pos.enPassantSquare == Square::None) {
             return false; // None is returned if either of enPassant_file or enPassant_rank were invalid/out of bounds so returned None.
         }
+        if ((enPassant_rank != '3' && enPassant_rank != '6') == true) return false; // EnPassant can only happen at the 3 or the 6th rank.
     }
 
     // Convert halfmove/fullmove fields from string to integer.
