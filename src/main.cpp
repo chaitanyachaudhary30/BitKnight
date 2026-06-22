@@ -9,7 +9,7 @@ int main() {
     Position pos;
 
     const std::string TEST_FEN =
-        "4k3/8/8/8/3Q4/8/8/4K3 w - - 0 1";
+        "4k3/8/8/8/3K4/8/8/8 w - - 0 1";
 
     if (!loadFEN(pos, TEST_FEN)) {
         std::cout << "Failed to load test FEN.\n";
@@ -24,7 +24,7 @@ int main() {
     std::cout << "Generated pseudo-legal moves: "
               << moves.size() << "\n";
 
-    std::cout << "Expected queen-only move count: 27\n";
+    std::cout << "Expected king-only pseudo-legal move count: 8\n";
 
     return 0;
 }

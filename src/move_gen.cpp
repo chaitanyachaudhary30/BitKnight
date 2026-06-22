@@ -382,6 +382,69 @@ void generateQueenMoves(const Position& pos, MoveList& moves, Square source, Pie
 }
 
 
+// KING
+
+void generateKingMoves(const Position& pos, MoveList& moves, Square source, Piece king) {
+    int source_idx = static_cast<int>(source);
+
+    int source_file = source_idx % 8;
+    int source_rank = source_idx / 8;
+
+    // King moves one square in any of the 8 directions.
+    int king_directions[8][2] = {
+        { 1,  0},  // right
+        {-1,  0},  // left
+        { 0,  1},  // up
+        { 0, -1},  // down
+
+        { 1,  1},  // top-right
+        {-1,  1},  // top-left
+        { 1, -1},  // bottom-right
+        {-1, -1}   // bottom-left
+    };
+
+    for (int dir = 0; dir < 8; dir++) {
+        int target_file = source_file + king_directions[dir][0];
+        int target_rank = source_rank + king_directions[dir][1];
+
+        // Skip squares outside the board.
+        if (target_file < 0 || target_file > 7 || target_rank < 0 || target_rank > 7) {
+            continue;
+        }
+
+        int target_idx = target_rank * 8 + target_file;
+        Square target_square = static_cast<Square>(target_idx);
+
+        Piece target_piece = pos.pieceAt(target_square);
+
+        // Empty square: normal quiet king move.
+        if (target_piece == Piece::None) {
+            moves.push_back(Move(
+                source,
+                target_square,
+                king,
+                Piece::None,
+                PieceType::None,
+                MoveFlag::Quiet
+            ));
+        }
+
+        // Enemy piece: king can capture it in pseudo-legal generation.
+        else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
+            moves.push_back(Move(
+                source,
+                target_square,
+                king,
+                target_piece,
+                PieceType::None,
+                MoveFlag::Capture
+            ));
+        }
+
+        // Own piece: blocked, no move.
+    }
+}
+
     void generatePseudoLegalMoves (const Position &pos, MoveList& moves){
 
         moves.clear();
@@ -408,6 +471,9 @@ void generateQueenMoves(const Position& pos, MoveList& moves, Square source, Pie
             }
             else if (piece_type == PieceType :: Queen){
                 generateQueenMoves (pos, moves, square, piece);
+            }
+            else if (piece_type == PieceType :: King){
+                generateKingMoves (pos, moves, square, piece);
             }
         }
     }
