@@ -1,40 +1,58 @@
 #include <iostream>
-#include "position.h"
+
 #include "fen.h"
+#include "move.h"
 
 int main() {
     using namespace BitKnight;
 
     Position pos;
 
-    pos.setPiece(Piece::WhiteKing, Square::E1);
-    pos.setPiece(Piece::WhiteRook, Square::H1);
-    pos.setPiece(Piece::BlackKing, Square::E8);
-    pos.setPiece(Piece::BlackQueen, Square::D8);
-    pos.setPiece(Piece::WhitePawn, Square::E4);
-
-    pos.print();
-
-    std::cout << std::boolalpha; // boolaplha prints all 0's and 1's of boolean outputs as "true" or "false".
-
-    std::cout << "Is E4 occupied? " << pos.isOccupied(Square::E4) << "\n";
-
-    std::cout << "Is E4 occupied by White? " << pos.isOccupiedByColor(Square::E4, Color::White) << "\n\n\n";
-
-
-
-
-    if (!(loadFEN (pos, STARTING_FEN))) {
-        std :: cout << "Failed to load FEN.\n";
+    if (!loadFEN(pos, STARTING_FEN)) {
+        std::cout << "Failed to load FEN.\n";
         return 1;
     }
-    std :: cout << "Starting postion loaded successfully:\n";
-    pos.print(); 
 
-    std::cout << "Is E4 occupied by Black? " << pos.isOccupiedByColor(Square::E4, Color::Black) << "\n";
+    std::cout << "Starting position loaded successfully:\n";
+    pos.print();
 
-    std::cout << "Is A1 occupied? " << pos.isOccupied(Square::A1) << "\n";
+    std::cout << std::boolalpha;
 
+    // A normal pawn move from e2 to e4.
+    Move quietMove(
+        Square::E2,
+        Square::E4,
+        Piece::WhitePawn
+    );
+
+    // A knight capture example: white knight from f3 captures black pawn on e5.
+    Move captureMove(
+        Square::F3, //  source
+        Square::E5, // destination
+        Piece::WhiteKnight, // piece moving
+        Piece::BlackPawn, // capture
+        PieceType::None,  // promotion piece
+        MoveFlag::Capture // what type of move
+    );
+
+    // A promotion example: white pawn promotes on e8 to a queen.
+    Move promotionMove(
+        Square::E7,
+        Square::E8,
+        Piece::WhitePawn,
+        Piece::None,
+        PieceType::Queen,
+        MoveFlag::Promotion
+    );
+
+    std::cout << "quietMove is capture? "
+              << isCapture(quietMove) << "\n";
+
+    std::cout << "captureMove is capture? "
+              << isCapture(captureMove) << "\n";
+
+    std::cout << "promotionMove is promotion? "
+              << isPromotion(promotionMove) << "\n";
 
     return 0;
 }
