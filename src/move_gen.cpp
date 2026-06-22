@@ -311,6 +311,77 @@ void generateRookMoves(const Position& pos, MoveList& moves, Square source, Piec
 }
 
 
+// QUEEN
+
+void generateQueenMoves(const Position& pos, MoveList& moves, Square source, Piece queen) {
+    int source_idx = static_cast<int>(source);
+
+    int source_file = source_idx % 8;
+    int source_rank = source_idx / 8;
+
+    // Queen moves in all 8 sliding directions:
+    // rook directions + bishop directions.
+    int queen_directions[8][2] = {
+        { 1,  0},  // right
+        {-1,  0},  // left
+        { 0,  1},  // up
+        { 0, -1},  // down
+
+        { 1,  1},  // top-right
+        {-1,  1},  // top-left
+        { 1, -1},  // bottom-right
+        {-1, -1}   // bottom-left
+    };
+
+    for (int dir = 0; dir < 8; dir++) {
+        int file = source_file + queen_directions[dir][0];
+        int rank = source_rank + queen_directions[dir][1];
+
+        // Keep moving in this direction until blocked or outside the board.
+        while (file >= 0 && file < 8 && rank >= 0 && rank < 8) {
+            int target_idx = rank * 8 + file;
+            Square target_square = static_cast<Square>(target_idx);
+
+            Piece target_piece = pos.pieceAt(target_square);
+
+            // Empty square: queen can move here and continue sliding.
+            if (target_piece == Piece::None) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    queen,
+                    Piece::None,
+                    PieceType::None,
+                    MoveFlag::Quiet
+                ));
+            }
+
+            // Enemy piece: queen can capture it, but cannot move beyond it.
+            else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    queen,
+                    target_piece,
+                    PieceType::None,
+                    MoveFlag::Capture
+                ));
+
+                break;
+            }
+
+            // Own piece: queen is blocked.
+            else {
+                break;
+            }
+
+            file += queen_directions[dir][0];
+            rank += queen_directions[dir][1];
+        }
+    }
+}
+
+
     void generatePseudoLegalMoves (const Position &pos, MoveList& moves){
 
         moves.clear();
@@ -334,6 +405,9 @@ void generateRookMoves(const Position& pos, MoveList& moves, Square source, Piec
             }
             else if (piece_type == PieceType :: Rook){
                 generateRookMoves (pos, moves, square, piece);
+            }
+            else if (piece_type == PieceType :: Queen){
+                generateQueenMoves (pos, moves, square, piece);
             }
         }
     }
