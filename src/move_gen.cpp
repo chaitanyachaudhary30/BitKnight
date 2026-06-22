@@ -117,7 +117,7 @@ void generatePawnMoves(const Position& pos, MoveList& moves, Square source, Piec
     }
 }        
 
-
+// KNIGHT
 void generateKnightMoves(const Position& pos, MoveList& moves, Square source, Piece knight) {
     int source_idx = static_cast<int>(source);
 
@@ -178,6 +178,71 @@ void generateKnightMoves(const Position& pos, MoveList& moves, Square source, Pi
     }
 }
 
+
+// BISHOP
+void generateBishopMoves(const Position& pos, MoveList& moves, Square source, Piece bishop) {
+    int source_idx = static_cast<int>(source);
+
+    int source_file = source_idx % 8;
+    int source_rank = source_idx / 8;
+
+    // Bishop moves in 4 diagonal directions:
+    // top-right, top-left, bottom-right, bottom-left.
+    int bishop_directions[4][2] = {
+        { 1,  1},
+        {-1,  1},
+        { 1, -1},
+        {-1, -1}
+    };
+
+    for (int dir = 0; dir < 4; dir++) {
+        int file = source_file + bishop_directions[dir][0];
+        int rank = source_rank + bishop_directions[dir][1];
+
+        // Keep moving in this diagonal direction until blocked or outside board.
+        while (file >= 0 && file < 8 && rank >= 0 && rank < 8) {
+            int target_idx = rank * 8 + file;
+            Square target_square = static_cast<Square>(target_idx);
+
+            Piece target_piece = pos.pieceAt(target_square);
+
+            // Empty square: bishop can move here and continue sliding.
+            if (target_piece == Piece::None) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    bishop,
+                    Piece::None,
+                    PieceType::None,
+                    MoveFlag::Quiet
+                ));
+            }
+
+            // Enemy piece: bishop can capture it, but cannot move beyond it.
+            else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    bishop,
+                    target_piece,
+                    PieceType::None,
+                    MoveFlag::Capture
+                ));
+
+                break;
+            }
+
+            // Own piece: bishop is blocked and cannot move further.
+            else {
+                break;
+            }
+
+            file += bishop_directions[dir][0];
+            rank += bishop_directions[dir][1];
+        }
+    }
+}
+
     void generatePseudoLegalMoves (const Position &pos, MoveList& moves){
 
         moves.clear();
@@ -196,7 +261,9 @@ void generateKnightMoves(const Position& pos, MoveList& moves, Square source, Pi
             else if (piece_type == PieceType :: Knight){
                 generateKnightMoves (pos, moves, square, piece);
             }
-
+            else if (piece_type == PieceType :: Bishop){
+                generateBishopMoves (pos, moves, square, piece);
+            }
         }
     }
 

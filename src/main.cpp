@@ -8,12 +8,14 @@ int main() {
 
     Position pos;
 
-    if (!loadFEN(pos, STARTING_FEN)) {
-        std::cout << "Failed to load starting FEN.\n";
+    const std::string TEST_FEN =
+        "4k3/8/8/8/3B4/8/8/4K3 w - - 0 1";
+
+    if (!loadFEN(pos, TEST_FEN)) {
+        std::cout << "Failed to load test FEN.\n";
         return 1;
     }
 
-    std::cout << "Starting position:\n";
     pos.print();
 
     MoveList moves;
@@ -22,13 +24,7 @@ int main() {
     std::cout << "Generated pseudo-legal moves: "
               << moves.size() << "\n";
 
-    std::cout << "Expected move count from starting position: 20\n";
-
-    if (moves.size() == 20) {
-        std::cout << "Knight move generation test passed.\n";
-    } else {
-        std::cout << "Knight move generation test failed.\n";
-    }
+    std::cout << "Expected bishop-only move count: 13\n";
 
     return 0;
 }
