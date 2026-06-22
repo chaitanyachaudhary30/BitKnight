@@ -243,6 +243,74 @@ void generateBishopMoves(const Position& pos, MoveList& moves, Square source, Pi
     }
 }
 
+
+
+//ROOK
+
+void generateRookMoves(const Position& pos, MoveList& moves, Square source, Piece rook) {
+    int source_idx = static_cast<int>(source);
+
+    int source_file = source_idx % 8;
+    int source_rank = source_idx / 8;
+
+    // Rook moves in 4 straight directions:
+    // right, left, up, down.
+    int rook_directions[4][2] = {
+        { 1,  0},
+        {-1,  0},
+        { 0,  1},
+        { 0, -1}
+    };
+
+    for (int dir = 0; dir < 4; dir++) {
+        int file = source_file + rook_directions[dir][0];
+        int rank = source_rank + rook_directions[dir][1];
+
+        // Keep moving in this direction until blocked or outside board.
+        while (file >= 0 && file < 8 && rank >= 0 && rank < 8) {
+            int target_idx = rank * 8 + file;
+            Square target_square = static_cast<Square>(target_idx);
+
+            Piece target_piece = pos.pieceAt(target_square);
+
+            // Empty square: rook can move here and continue sliding.
+            if (target_piece == Piece::None) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    rook,
+                    Piece::None,
+                    PieceType::None,
+                    MoveFlag::Quiet
+                ));
+            }
+
+            // Enemy piece: rook can capture it, but cannot move beyond it.
+            else if (pieceColor(target_piece) == opposite(pos.sideToMove)) {
+                moves.push_back(Move(
+                    source,
+                    target_square,
+                    rook,
+                    target_piece,
+                    PieceType::None,
+                    MoveFlag::Capture
+                ));
+
+                break;
+            }
+
+            // Own piece: rook is blocked.
+            else {
+                break;
+            }
+
+            file += rook_directions[dir][0];
+            rank += rook_directions[dir][1];
+        }
+    }
+}
+
+
     void generatePseudoLegalMoves (const Position &pos, MoveList& moves){
 
         moves.clear();
@@ -263,6 +331,9 @@ void generateBishopMoves(const Position& pos, MoveList& moves, Square source, Pi
             }
             else if (piece_type == PieceType :: Bishop){
                 generateBishopMoves (pos, moves, square, piece);
+            }
+            else if (piece_type == PieceType :: Rook){
+                generateRookMoves (pos, moves, square, piece);
             }
         }
     }
