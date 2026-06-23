@@ -1,57 +1,39 @@
 #include <iostream>
 
 #include "fen.h"
-#include "move_gen.h"
+#include "attack.h"
 
 int main() {
+    using namespace std;
     using namespace BitKnight;
 
     Position pos;
 
-    const std::string TEST_FEN =
-        "4k3/8/8/3pP3/8/8/8/R3K2R w KQ d6 0 1";
+    const string TEST_FEN =
+        "k3r3/8/8/8/8/8/8/4K3 w - - 0 1";
 
     if (!loadFEN(pos, TEST_FEN)) {
-        std::cout << "Failed to load test FEN.\n";
+        cout << "Failed to load test FEN.\n";
         return 1;
     }
 
     pos.print();
 
-    MoveList moves;
-    generatePseudoLegalMoves(pos, moves);
+    cout << boolalpha;
 
-    int kingCastleCount = 0;
-    int queenCastleCount = 0;
-    int enPassantCount = 0;
+    cout << "Is E1 attacked by Black? "
+         << isSquareAttacked(pos, Square::E1, Color::Black) << "\n";
 
-    for (const Move& move : moves) {
-        if (move.flag == MoveFlag::KingCastle) {
-            kingCastleCount++;
-        } else if (move.flag == MoveFlag::QueenCastle) {
-            queenCastleCount++;
-        } else if (move.flag == MoveFlag::EnPassant) {
-            enPassantCount++;
-        }
-    }
+    cout << "Is White king in check? "
+         << isKingInCheck(pos, Color::White) << "\n";
 
-    std::cout << "Generated pseudo-legal moves: "
-              << moves.size() << "\n";
+    cout << "Is Black king in check? "
+         << isKingInCheck(pos, Color::Black) << "\n";
 
-    std::cout << "Kingside castle moves: "
-              << kingCastleCount << "\n";
-
-    std::cout << "Queenside castle moves: "
-              << queenCastleCount << "\n";
-
-    std::cout << "En passant moves: "
-              << enPassantCount << "\n";
-
-    std::cout << "\nExpected:\n";
-    std::cout << "Total moves: 28\n";
-    std::cout << "Kingside castle moves: 1\n";
-    std::cout << "Queenside castle moves: 1\n";
-    std::cout << "En passant moves: 1\n";
+    cout << "\nExpected:\n";
+    cout << "Is E1 attacked by Black? true\n";
+    cout << "Is White king in check? true\n";
+    cout << "Is Black king in check? false\n";
 
     return 0;
 }
