@@ -1,4 +1,38 @@
 // This does not decide whether the move is fully legal. It only applies the move if the move is structurally consistent.
+/* MOVE EXECUTION PIPELINE:
+validate move 
+↓
+record old-state information
+↓
+update rights that depend on old squares
+↓
+remove captured pieces
+↓
+move the main piece
+↓
+move rook if castling
+↓
+update en passant square
+↓
+update clocks
+↓
+switch side
+↓
+refresh occupancies
+*/
+
+
+/* REASON FOR ORDER OF THE FUNCTIONS: 
+targetPiece before moving         -> because destination info is old-board info
+updateCastlingRights before move  ->  because rights depend on from/to/captured old-state info
+remove captures before placing    ->  because destination may be occupied
+promotion handling during placing -> because pawn becomes another piece
+rook movement after king move     -> because castling moves two pieces
+enPassantSquare after move        -> because it is caused by the move
+sideToMove near end               -> because everything before uses moving side
+occupancies last                  -> because all piece changes are done
+*/
+
 
     #include "make_move.h"
 
