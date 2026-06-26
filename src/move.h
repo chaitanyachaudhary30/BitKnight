@@ -73,5 +73,8 @@ inline bool isPromotion(const Move& move) {
     return move.flag == MoveFlag::Promotion ||
            move.flag == MoveFlag::PromotionCapture;
 }
+inline bool isCastle (const Move& move){
+    return move.flag == MoveFlag::KingCastle || move.flag == MoveFlag::QueenCastle;
+}
 
 }

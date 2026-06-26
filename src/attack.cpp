@@ -11,7 +11,7 @@ namespace BitKnight {
 
 Square findKing(const Position& pos, Color color) {
     Piece king = Piece :: WhiteKing;
-    if (color == Color :: Black) king : Piece::BlackKing;
+    if (color == Color :: Black) king = Piece::BlackKing;
 
     for (int squareIdx = 0; squareIdx < 64; squareIdx++) {
         Square square = static_cast<Square>(squareIdx);
@@ -28,7 +28,7 @@ bool isSquareAttacked(const Position& pos, Square square, Color attackingColor) 
     if (square == Square::None || attackingColor == Color::None) {
         return false;
     }
-    if (attackingColor == pos.sideToMove) return false;
+    // if (attackingColor == pos.sideToMove) return false; Fixed this bug.
 
     int squareIdx = static_cast<int>(square);
     int file = squareIdx % 8;
@@ -155,10 +155,10 @@ bool isSquareAttacked(const Position& pos, Square square, Color attackingColor) 
                     if (type == PieceType::Bishop || type == PieceType::Queen) {
                         return true;
                     }
+                    else break; // Blocked by piece of attacking color, which is not queen or bishop.
                 }
 
-                // Any piece blocks further attack along this ray.
-                else break;
+                else break;  // Blocked by piece of same color coming in bw.
             }
 
             currentFile += bishopDirections[dir][0];
