@@ -2,7 +2,7 @@
 
 namespace BitKnight {
 
-static int pieceValue(Piece piece) {
+int pieceValue(Piece piece) {
     switch (piece) {
         case Piece::WhitePawn:
         case Piece::BlackPawn:
@@ -27,6 +27,28 @@ static int pieceValue(Piece piece) {
         // case Piece::WhiteKing:
         // case Piece::BlackKing:
         //     return 0;
+
+        default:
+            return 0;
+    }
+}
+
+int pieceTypeValue(PieceType pieceType) {
+    switch (pieceType) {
+        case PieceType::Pawn:
+            return 100;
+
+        case PieceType::Knight:
+            return 320;
+
+        case PieceType::Bishop:   
+            return 330;            
+
+        case PieceType::Rook:
+            return 500;
+
+        case PieceType::Queen:
+            return 900;
 
         default:
             return 0;

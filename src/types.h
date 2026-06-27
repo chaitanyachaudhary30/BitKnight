@@ -86,6 +86,11 @@ inline constexpr Color pieceColor (Piece piece) {
     return Color :: Black;
 }
 
+inline constexpr PieceType Type_of_Piece (Piece piece) {
+    int enum_val = (static_cast<int> (piece))%6;
+    return static_cast<PieceType> (enum_val);
+}
+
 }
 
 
