@@ -3,16 +3,68 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <random>
 
 #include "fen.h"
 #include "legal_moves.h"
 #include "make_move.h"
+#include "search.h"
 
 namespace BitKnight {
 
+static int given_searchDepth = 3;
+
+// Reads depth from commands like:
+// go depth 4
+// If no depth is given, uses g_searchDepth.
+static int parseDepthFromGoCommand(const std::string& line) {
+    std::istringstream iss(line);
+
+    std::string token;
+    int depth = given_searchDepth;
+
+    while (iss >> token) {
+        if (token == "depth") {
+            if (iss >> depth) {
+                if (depth <= 0) {
+                    depth = 1;
+                }
+            }
+
+            break;
+        }
+    }
+
+    return depth;
+}
+
+// Handles commands like:
+// setoption name Search Depth value 4
+static void handleSetOptionCommand(const std::string& line) {
+    if (line.find("Search Depth") == std::string::npos) {
+        return;
+    }
+
+    std::size_t valuePos = line.find("value");
+
+    if (valuePos == std::string::npos) {
+        return;
+    }
+
+    std::istringstream iss(line.substr(valuePos + 5));
+
+    int newDepth;
+
+    if (iss >> newDepth) {
+        if (newDepth <= 0) {
+            newDepth = 1;
+        }
+
+        given_searchDepth = newDepth;
+    }
+}
+
 // Converts internal Square enum to UCI square text.
-// Eg: Square::E2 -> "e2"
+// Example: Square::E2 -> "e2"
 static std::string squareToUci(Square square) {
     int index = static_cast<int>(square);
 
@@ -31,7 +83,7 @@ static std::string squareToUci(Square square) {
 }
 
 // Converts promotion PieceType to UCI promotion character.
-// UCI uses lowercase promotion letters: q, r, b, n.
+// UCI promotion letters are lowercase: q, r, b, n.
 static char promotionChar(PieceType promotion) {
     if (promotion == PieceType::Queen) return 'q';
     if (promotion == PieceType::Rook) return 'r';
@@ -41,10 +93,8 @@ static char promotionChar(PieceType promotion) {
     return '\0';
 }
 
-// Converts BitKnight's internal Move object to UCI move format.
-// Examples:
-// e2 -> e4 becomes "e2e4"
-// e7 -> e8 = Queen becomes "e7e8q"
+// Converts internal Move to UCI format.
+// Examples: e2e4, e7e8q
 static std::string moveToUci(const Move& move) {
     std::string result;
 
@@ -62,9 +112,7 @@ static std::string moveToUci(const Move& move) {
     return result;
 }
 
-// Applies a move received from the GUI.
-// Instead of manually parsing every move detail, we generate legal moves
-// and find the legal move whose UCI string matches the GUI move.
+// Applies a GUI move by matching it against generated legal moves.
 static bool makeUciMove(Position& pos, const std::string& uciMove) {
     MoveList legalMoves;
     generateLegalMoves(pos, legalMoves);
@@ -78,23 +126,21 @@ static bool makeUciMove(Position& pos, const std::string& uciMove) {
     return false;
 }
 
-// Handles UCI "position" command.
-// Examples:
+// Handles:
 // position startpos
 // position startpos moves e2e4 e7e5
-// position fen 4k3/8/8/8/8/8/8/4K3 w - - 0 1
+// position fen <fen>
+// position fen <fen> moves ...
 static void handlePositionCommand(Position& pos, const std::string& line) {
     std::istringstream ss(line);
 
     std::string token;
-    ss >> token; // reads "position"
-
-    ss >> token; // reads either "startpos" or "fen"
+    ss >> token; // "position"
+    ss >> token; // "startpos" or "fen"
 
     if (token == "startpos") {
         loadFEN(pos, STARTING_FEN);
 
-        // After "startpos", GUI may optionally send "moves ..."
         if (ss >> token) {
             if (token == "moves") {
                 std::string moveString;
@@ -104,13 +150,12 @@ static void handlePositionCommand(Position& pos, const std::string& line) {
                 }
             }
         }
-    } 
+    }
     else if (token == "fen") {
         std::string fenPart;
         std::string fen;
 
-        // UCI FEN has exactly 6 fields:
-        // board side castling enPassant halfmove fullmove
+        // UCI FEN has 6 fields.
         for (int i = 0; i < 6; i++) {
             if (!(ss >> fenPart)) {
                 return;
@@ -125,7 +170,6 @@ static void handlePositionCommand(Position& pos, const std::string& line) {
 
         loadFEN(pos, fen);
 
-        // After FEN, GUI may optionally send "moves ..."
         if (ss >> token) {
             if (token == "moves") {
                 std::string moveString;
@@ -138,42 +182,32 @@ static void handlePositionCommand(Position& pos, const std::string& line) {
     }
 }
 
-// Randomly chooses one move from the legal move list.
-// This is temporary until we add evaluation/search.
-static Move chooseRandomMove(const MoveList& moves) {
-    static std::mt19937 rng(std::random_device{}());
-
-    std::uniform_int_distribution<int> dist(
-        0,
-        static_cast<int>(moves.size()) - 1
-    );
-
-    return moves[dist(rng)];
-}
-
 // Handles UCI "go" command.
-// For now, BitKnight simply chooses a random legal move.
-static void handleGoCommand(Position& pos) {
-    MoveList legalMoves;
-    generateLegalMoves(pos, legalMoves);
+// v0.2.0: fixed-depth search using searchBestMove().
+static void handleGoCommand(Position& pos, const std::string& line) {
+    int depth = parseDepthFromGoCommand(line);
 
-    if (legalMoves.empty()) {
+    SearchResult result = searchBestMove(pos, depth);
+
+    if (!result.hasMove) {
         std::cout << "bestmove 0000" << std::endl;
         return;
     }
 
-    Move chosenMove = chooseRandomMove(legalMoves);
-    std::string bestMoveString = moveToUci(chosenMove);
+    std::string bestMoveString = moveToUci(result.bestMove);
 
-    // Update internal position after choosing the move.
-    makeMove(pos, chosenMove);
+    std::cout << "info depth " << depth
+              << " score cp " << result.score
+              << std::endl;
 
-    // This is the main output the GUI expects.
     std::cout << "bestmove " << bestMoveString << std::endl;
+
+    // Useful for manual terminal testing.
+    // Cute Chess usually sends the full updated position again.
+    makeMove(pos, result.bestMove);
 }
 
 // Main UCI loop.
-// Continuously reads commands from GUI and prints UCI responses.
 void runUciLoop() {
     Position pos;
     loadFEN(pos, STARTING_FEN);
@@ -184,20 +218,27 @@ void runUciLoop() {
         if (line == "uci") {
             std::cout << "id name BitKnight" << std::endl;
             std::cout << "id author Chaitanya Chaudhary" << std::endl;
+
+            // Cute Chess can show this option before the game starts.
+            std::cout << "option name Search Depth type spin default 3 min 1 max 8" << std::endl;
+
             std::cout << "uciok" << std::endl;
-        } 
+        }
         else if (line == "isready") {
             std::cout << "readyok" << std::endl;
-        } 
+        }
         else if (line == "ucinewgame") {
             loadFEN(pos, STARTING_FEN);
-        } 
+        }
+        else if (line.rfind("setoption", 0) == 0) {
+            handleSetOptionCommand(line);
+        }
         else if (line.rfind("position", 0) == 0) {
             handlePositionCommand(pos, line);
-        } 
+        }
         else if (line.rfind("go", 0) == 0) {
-            handleGoCommand(pos);
-        } 
+            handleGoCommand(pos, line);
+        }
         else if (line == "quit") {
             break;
         }
