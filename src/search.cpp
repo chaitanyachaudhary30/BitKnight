@@ -45,15 +45,85 @@ static void orderMoves(MoveList& legalMoves) {
     );
 }
 
+// Returns true for moves that should still be searched in quiescence.
+// For now: captures and promotions.
+static bool isCaptureOrPromotion(const Move& move) {
+    return move.captured != Piece::None || isPromotion(move);
+}
+
+
+// Quiescence search avoids evaluating positions in the middle of captures.
+// It searches only captures/promotions, unless the side to move is in check.
+
+
+// alpha = best score found so far for the side to move {LOWER BOUND}
+// beta  = score so good that opponent will avoid allowing this line {UPPER CUTOFF LIMIT}
+
+static int quiescence(const Position& pos, int alpha, int beta, int plyFromRoot) {
+    bool inCheck = isKingInCheck(pos, pos.sideToMove);
+
+    // If not in check, we are allowed to evaluate the current position directly.
+    // If in check, we cannot use staticEval because the side must respond to check.
+    if (!inCheck) {
+        int staticEval = evaluate(pos);
+
+        if (staticEval >= beta) {
+            return beta;
+        }
+
+        if (staticEval > alpha) {
+            alpha = staticEval;
+        }
+    }
+
+    MoveList legalMoves;
+    generateLegalMoves(pos, legalMoves);
+
+    if (legalMoves.empty()) {
+        if (inCheck) {
+            return -MATE_SCORE + plyFromRoot;
+        }
+
+        return 0;
+    }
+
+    orderMoves(legalMoves);
+
+    for (const Move& move : legalMoves) {
+        // If king is in check, search all legal evasions.
+        // Otherwise, search only captures/promotions.
+        if (!inCheck && !isCaptureOrPromotion(move)) {
+            continue;
+        }
+
+        Position child = pos;
+
+        if (!makeMove(child, move)) {
+            continue;
+        }
+
+        int score = -quiescence(child, -beta, -alpha, plyFromRoot + 1);
+
+        if (score >= beta) {
+            return beta;
+        }
+
+        if (score > alpha) {
+            alpha = score;
+        }
+    }
+
+    return alpha;
+}
+
 // Searches the position from the current side's perspective.
 // Return a positive score, if the move results in a good evaluation for the SIDE TO MOVE.
 // plyFromRoot = number of half-moves searched from the original root position.
 // It is used to prefer faster mates and delay losing mates.
 static int negamax(const Position& pos, int depth, int alpha, int beta, int plyFromRoot) {
-    if (depth <= 0) {
-        return evaluate(pos);
-    }
-
+if (depth <= 0) {
+    return quiescence(pos, alpha, beta, plyFromRoot);
+}
     MoveList legalMoves;
     generateLegalMoves(pos, legalMoves);
 
